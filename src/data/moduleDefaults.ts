@@ -56,12 +56,13 @@ export const MODULE_DEFAULTS: Record<string, ModuleDefault> = {
     data: {
       heading: '預約參觀',
       buttonLabel: '送出預約',
-      fields: [
-        { type: 'text', label: '姓名', required: true, placeholder: '請輸入您的姓名', options: [] },
-        { type: 'tel', label: '電話', required: true, placeholder: '請輸入您的聯絡電話', options: [] },
-      ],
+      formActionId: '',
       recaptchaEnabled: false,
-      privacyEnabled: false,
+      recaptchaSiteKey: '',
+      fields: [
+        { name: 'contact_name',  widget: 'text', label: '姓名', required: true,  placeholder: '請輸入您的姓名',    options: [] },
+        { name: 'contact_phone', widget: 'tel',  label: '電話', required: true,  placeholder: '請輸入您的聯絡電話', options: [] },
+      ],
     },
   },
 }

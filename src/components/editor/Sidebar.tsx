@@ -11,6 +11,8 @@ import { ImageUploader } from './ImageUploader'
 import { SiteInfoPanel } from './SiteInfoPanel'
 import { MODULE_LABELS } from '../../data/moduleDefaults'
 import type { Module, Section, SiteSharedInfo } from '../../types'
+import type { ContactFormField, PhpFieldKey, PhpFieldWidget } from '../modules/ContactForm.normalize'
+import { PHP_FIELD_KEYS, PHP_FIELD_KEY_LABELS, PHP_WIDGET_OPTIONS } from '../modules/ContactForm.normalize'
 
 // ── 欄位中文標籤對照表 ────────────────────────────────────────────────────────
 
@@ -142,6 +144,7 @@ async function saveProject(
 // ── 陣列欄位編輯器 ────────────────────────────────────────────────────────────
 
 type AnyRecord = Record<string, unknown>
+type ContactFormFieldDraft = ContactFormField & { key?: string }  // key is UI-only, not persisted
 
 function isImageKey(key: string) {
   const k = key.toLowerCase()
@@ -373,6 +376,181 @@ const DEPRECATED_FIELDS: Record<string, string[]> = {
   footer_bar:      ['brandName', 'copyrightText', 'socialLinks'],
 }
 
+function ContactFormFieldsEditor({
+  sectionId,
+  module,
+}: {
+  sectionId: string
+  module: Module
+}) {
+  const updateModuleData = useEditorStore((s) => s.updateModuleData)
+  const rawFields = Array.isArray(module.data.fields) ? module.data.fields : []
+
+  const fields = rawFields.filter(
+    (field): field is ContactFormFieldDraft =>
+      typeof field === 'object' && field !== null
+  )
+
+  function updateFields(nextFields: ContactFormFieldDraft[]) {
+    updateModuleData(sectionId, module.id, { fields: nextFields })
+  }
+
+  function updateField(index: number, patch: Partial<ContactFormFieldDraft>) {
+    updateFields(fields.map((field, currentIndex) => (
+      currentIndex === index ? { ...field, ...patch } : field
+    )))
+  }
+
+  function addField() {
+    updateFields([
+      ...fields,
+      {
+        key:         `field-${Date.now()}`,
+        name:        'contact_name' as PhpFieldKey,
+        widget:      'text' as PhpFieldWidget,
+        label:       '姓名',
+        required:    false,
+        placeholder: '',
+        options:     [],
+      },
+    ])
+  }
+
+  function removeField(index: number) {
+    updateFields(fields.filter((_, currentIndex) => currentIndex !== index))
+  }
+
+  function updateOptions(index: number, value: string) {
+    updateField(index, {
+      options: value
+        .split('\n')
+        .map((option) => option.trim())
+        .filter(Boolean),
+    })
+  }
+
+  // PHP_WIDGET_OPTIONS and PHP_FIELD_KEYS are imported from normalize
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">表單欄位</h3>
+          <p className="mt-1 text-xs text-gray-400">可新增、刪除與編輯欄位設定</p>
+        </div>
+        <button
+          type="button"
+          onClick={addField}
+          className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+        >
+          <Plus size={12} />
+          新增欄位
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {fields.map((field, index) => (
+          <div key={field.key ?? `${field.label}-${index}`} className="rounded-lg border border-gray-200 bg-white p-3">
+            <div className="flex flex-col gap-3">
+              {/* PHP 欄位名稱（白名單下拉）*/}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  欄位（PHP name）
+                </label>
+                <select
+                  value={field.name}
+                  onChange={(e) => updateField(index, {
+                    name:  e.target.value as PhpFieldKey,
+                    label: PHP_FIELD_KEY_LABELS[e.target.value as PhpFieldKey] ?? field.label,
+                  })}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  {PHP_FIELD_KEYS.map((key) => (
+                    <option key={key} value={key}>{PHP_FIELD_KEY_LABELS[key]}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 顯示標籤（可自訂，預設跟隨 PHP name）*/}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  顯示標籤
+                </label>
+                <input
+                  type="text"
+                  value={field.label}
+                  onChange={(e) => updateField(index, { label: e.target.value })}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* 輸入元件類型 */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                  欄位類型
+                </label>
+                <select
+                  value={field.widget}
+                  onChange={(e) => updateField(index, {
+                    widget:  e.target.value as PhpFieldWidget,
+                    options: ['select', 'radio', 'checkbox'].includes(e.target.value) ? field.options : [],
+                  })}
+                  className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  {PHP_WIDGET_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={field.required}
+                  onChange={(e) => updateField(index, { required: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                必填欄位
+              </label>
+
+              {(field.widget === 'select' || field.widget === 'radio' || field.widget === 'checkbox') && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                    選項
+                  </label>
+                  <textarea
+                    value={field.options.join('\n')}
+                    onChange={(e) => updateOptions(index, e.target.value)}
+                    className="min-h-24 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    placeholder="每行一個選項"
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => removeField(index)}
+                  className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                >
+                  <Trash2 size={12} />
+                  刪除欄位
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {fields.length === 0 && (
+          <p className="rounded-lg border border-dashed border-gray-200 bg-white px-4 py-6 text-center text-xs text-gray-400">
+            尚無欄位，請先新增欄位。
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 單一 Module 的欄位編輯器 ─────────────────────────────────────────────────
 
 function ModuleFieldEditor({
@@ -383,6 +561,10 @@ function ModuleFieldEditor({
   module: Module
 }) {
   const updateModuleData = useEditorStore((s) => s.updateModuleData)
+
+  if (module.module_type === 'contact_form') {
+    return <ContactFormFieldsEditor sectionId={sectionId} module={module} />
+  }
 
   const deprecated = new Set(DEPRECATED_FIELDS[module.module_type] ?? [])
   const entries = Object.entries(module.data).filter(([k]) => !deprecated.has(k))
