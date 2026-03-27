@@ -2,14 +2,14 @@
 //
 // Data flow:
 //   module.data → normalizeContactForm() → ContactFormData → render
-//   Form state (name/phone/email) is local UI state, not module data.
+//   Form state is fields-driven local UI state, not module data.
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { ModuleProps } from './index'
+import type { ContactFormField } from './ContactForm.normalize'
 import { normalizeContactForm } from './ContactForm.normalize'
-import { useSiteSharedInfo } from '../renderer/SiteSharedInfoContext'
 
 interface LeadPayload {
   name:       string
@@ -24,28 +24,119 @@ async function submitLead(payload: LeadPayload) {
 }
 
 export function ContactForm({ module }: ModuleProps) {
-  const siteInfo = useSiteSharedInfo()
-  const { heading, buttonLabel, projectId, formAnchorId } = normalizeContactForm(
+  const { heading, buttonLabel, projectId, formAnchorId, fields } = normalizeContactForm(
     module.data as Record<string, unknown>,
-    siteInfo,
   )
 
-  const [name,  setName]  = useState('')
-  const [phone, setPhone] = useState('')
-  const [email, setEmail] = useState('')
+  const [formValues, setFormValues] = useState<Record<string, string>>({})
 
   const mutation = useMutation({
     mutationFn: submitLead,
     onSuccess: () => {
-      setName('')
-      setPhone('')
-      setEmail('')
+      setFormValues({})
     },
   })
 
+  function fieldKey(index: number) {
+    return `field-${index}`
+  }
+
+  function updateFieldValue(index: number, value: string) {
+    setFormValues((current) => ({
+      ...current,
+      [fieldKey(index)]: value,
+    }))
+  }
+
+  function getFieldValue(index: number): string {
+    return formValues[fieldKey(index)] ?? ''
+  }
+
+  function getLeadPayload() {
+    const firstTextFieldIndex = fields.findIndex((field) => field.type === 'text')
+    const firstTelFieldIndex = fields.findIndex((field) => field.type === 'tel')
+
+    return {
+      name: firstTextFieldIndex >= 0 ? getFieldValue(firstTextFieldIndex) : '',
+      phone: firstTelFieldIndex >= 0 ? getFieldValue(firstTelFieldIndex) : '',
+      email: '',
+      project_id: projectId,
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    mutation.mutate({ name, phone, email, project_id: projectId })
+    mutation.mutate(getLeadPayload())
+  }
+
+  function renderField(field: ContactFormField, index: number) {
+    const value = getFieldValue(index)
+    const baseFieldClassName =
+      'w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
+
+    if (field.type === 'textarea') {
+      return (
+        <textarea
+          value={value}
+          onChange={(e) => updateFieldValue(index, e.target.value)}
+          required={field.required}
+          placeholder={field.placeholder}
+          className={`${baseFieldClassName} min-h-28 resize-y`}
+        />
+      )
+    }
+
+    if (field.type === 'select') {
+      return (
+        <select
+          value={value}
+          onChange={(e) => updateFieldValue(index, e.target.value)}
+          required={field.required}
+          className={baseFieldClassName}
+        >
+          <option value="">{field.placeholder || `請選擇${field.label}`}</option>
+          {field.options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      )
+    }
+
+    if (field.type === 'radio') {
+      return (
+        <div className="flex flex-wrap gap-3">
+          {field.options.map((option) => (
+            <label
+              key={option}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700"
+            >
+              <input
+                type="radio"
+                name={fieldKey(index)}
+                value={option}
+                checked={value === option}
+                onChange={(e) => updateFieldValue(index, e.target.value)}
+                required={field.required && !value}
+              />
+              <span>{option}</span>
+            </label>
+          ))}
+        </div>
+      )
+    }
+
+    return (
+      <input
+        type={field.type}
+        required={field.required}
+        value={value}
+        onChange={(e) => updateFieldValue(index, e.target.value)}
+        placeholder={field.placeholder}
+        className={baseFieldClassName}
+      />
+    )
   }
 
   // ── 成功畫面 ─────────────────────────────────────────────────
@@ -83,44 +174,15 @@ export function ContactForm({ module }: ModuleProps) {
         )}
 
         <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              姓名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="請輸入您的姓名"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              電話 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="tel"
-              required
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="請輸入您的聯絡電話"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="請輸入您的 Email（選填）"
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
-            />
-          </div>
+          {fields.map((field, index) => (
+            <div key={`${field.label}-${index}`} className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">
+                {field.label}
+                {field.required && <span className="text-red-500"> *</span>}
+              </label>
+              {renderField(field, index)}
+            </div>
+          ))}
 
           <button
             type="submit"

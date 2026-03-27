@@ -370,6 +370,7 @@ const DEPRECATED_FIELDS: Record<string, string[]> = {
   sjs_aerial_view: ['markers', 'showMarkers'],
   aerial_view:     ['markers', 'showMarkers'],
   re_navbar:       ['phonePath'],
+  footer_bar:      ['brandName', 'copyrightText', 'socialLinks'],
 }
 
 // ── 單一 Module 的欄位編輯器 ─────────────────────────────────────────────────

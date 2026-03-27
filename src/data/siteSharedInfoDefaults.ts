@@ -10,7 +10,6 @@ export const defaultSiteSharedInfo: SiteSharedInfo = {
   formAnchorId: 'contact',
   brandName: '品牌名稱',
   brandUrl: '#',
-  copyrightText: 'Copyright © 建案名稱 Inc.',
+  copyrightText: '',
   socialLinks: [],
 }
-

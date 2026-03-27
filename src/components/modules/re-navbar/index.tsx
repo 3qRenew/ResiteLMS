@@ -14,6 +14,7 @@ import { useSiteSharedInfo } from '../../renderer/SiteSharedInfoContext'
 // ── Sticky hook ───────────────────────────────────────────────────────────────
 
 const STICKY_OFFSET_PX = 60
+const MOBILE_BOTTOM_SPACER_PX = 80
 
 function useNavbarSticky(offset: number): boolean {
   const [isSticky, setIsSticky] = useState<boolean>(() =>
@@ -49,5 +50,26 @@ export function ReNavbar({ module }: ModuleProps) {
   const isSticky  = useNavbarSticky(STICKY_OFFSET_PX)
   const isEditing = useEditing()
 
-  return <ReNavbarView data={data} isSticky={isSticky} forceVisible={isEditing} />
+  return (
+    <>
+      {/*
+        Temporary workaround:
+        re_navbar is currently treated as a special module and placed at the end
+        of the page content. On mobile it uses fixed-bottom positioning, which
+        can overlap the last section. We therefore add a module-local spacer here
+        instead of touching global layout/body styles.
+
+        Long term, re_navbar should be upgraded to page-level chrome / shell UI
+        and no longer participate in normal content ordering.
+      */}
+      {!isEditing && (
+        <div
+          aria-hidden="true"
+          className="xl:hidden"
+          style={{ height: `${MOBILE_BOTTOM_SPACER_PX}px` }}
+        />
+      )}
+      <ReNavbarView data={data} isSticky={isSticky} forceVisible={isEditing} />
+    </>
+  )
 }

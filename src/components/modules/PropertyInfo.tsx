@@ -9,39 +9,54 @@ import { useSiteSharedInfo } from '../renderer/SiteSharedInfoContext'
 export function PropertyInfo({ module }: ModuleProps) {
   const siteInfo = useSiteSharedInfo()
   const d = normalizePropertyInfo(module.data as Record<string, unknown>, siteInfo)
-  const gridColsClass = d.columns === 1 ? 'md:grid-cols-1' : 'md:grid-cols-2'
 
   return (
     <section style={{ backgroundColor: '#eee' }}>
       {/* 案件資訊 */}
       {d.items.length > 0 && (
-        <div className="max-w-7xl mx-auto px-8 py-12">
-          <div className="flex flex-col lg:flex-row gap-8">
-            <div>
-              <p className="text-xs tracking-[0.3em] uppercase mb-1" style={{ color: '#c9c9c9' }}>
-                Information
-              </p>
-              <h2
-                className="text-lg font-bold mb-6"
-                style={{ color: '#595757', fontFamily: "'Noto Serif TC', serif" }}
-              >
-                案件資訊
-              </h2>
-            </div>
+        <div className="topBox px-6 py-[3%] lg:px-[10%]">
+          <div className="container-fluid">
+            <div className="infoList row flex flex-col gap-10 lg:flex-row">
+              <div className="col-lg-4 w-full lg:w-1/3">
+                <p className="mb-1 text-xs uppercase tracking-[0.3em]" style={{ color: '#c9c9c9' }}>
+                  Information
+                </p>
+                <h2
+                  className="text-lg font-bold"
+                  style={{ color: '#595757', fontFamily: "'Noto Serif TC', serif" }}
+                >
+                  案件資訊
+                </h2>
+              </div>
 
-            <ul className={`flex-1 grid grid-cols-1 ${gridColsClass} gap-x-12 gap-y-3`}>
-              {d.items.map((item) => (
-                <li key={`${item.label}-${item.value}`} className="flex gap-3 text-sm" style={{ color: '#595757' }}>
-                  <span
-                    className="shrink-0 font-medium px-2 py-0.5 text-xs self-start"
-                    style={{ background: '#5d8d75', color: '#fff', marginTop: '2px' }}
-                  >
-                    {item.label}
-                  </span>
-                  <span className="whitespace-pre-line leading-relaxed">{item.value}</span>
-                </li>
-              ))}
-            </ul>
+              <div className="col-lg-8 w-full lg:w-2/3">
+                <ul
+                  className="CaseInfo flex list-none flex-wrap p-0"
+                  style={{
+                    margin: 0,
+                    lineHeight: 3,
+                    borderTop: '1px solid rgb(174, 174, 174)',
+                  }}
+                >
+                  {d.items.map((item) => (
+                    <li
+                      key={`${item.label}-${item.value}`}
+                      className="block w-full px-0 py-4 lg:w-1/2"
+                      style={{
+                        borderBottom: '1px solid rgb(174, 174, 174)',
+                        color: '#595757',
+                      }}
+                    >
+                      <span className="font-medium">
+                        {item.label}
+                        <span aria-hidden="true">：</span>
+                      </span>
+                      <span className="ml-1 whitespace-pre-line leading-relaxed">{item.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       )}

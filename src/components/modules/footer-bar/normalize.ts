@@ -59,7 +59,9 @@ function resolveCopyrightText(raw: Record<string, unknown>, siteInfo: SiteShared
   if (siteInfo.copyrightText) return siteInfo.copyrightText
 
   const name = siteInfo.projectName
-  return name ? `Copyright © ${name}` : 'Copyright © 建案名稱'
+  return name
+    ? `Copyright © ${name} Inc. All rights reserved`
+    : 'Copyright © '
 }
 
 export function normalizeFooterBar(
