@@ -1,5 +1,7 @@
 // Normalize — PropertyInfo (module_type: property_info)
 // Pure function; no React / UI imports → safe for static import in MODULE_REGISTRY.
+import type { SiteSharedInfo } from '../../types/siteSharedInfo'
+import { defaultSiteSharedInfo } from '../../data/siteSharedInfoDefaults'
 
 export interface PropertyInfoItem {
   label: string
@@ -54,10 +56,18 @@ function buildFallbackItems(data: Omit<PropertyInfoData, 'items' | 'columns'>): 
   ].filter((item) => item.label && item.value)
 }
 
-export function normalizePropertyInfo(raw: Record<string, unknown>): PropertyInfoData {
+export function normalizePropertyInfo(
+  raw: Record<string, unknown>,
+  siteInfo: SiteSharedInfo = defaultSiteSharedInfo,
+): PropertyInfoData {
   const baseData = {
-    phone:             asString(raw.phone),
-    receptionAddress:  asString(raw.receptionAddress),
+    // shared fallback: raw > siteInfo > ''
+    phone:             asString(raw.phone)            || siteInfo.phone,
+    receptionAddress:  asString(raw.receptionAddress) || siteInfo.receptionAddress,
+    // field name mapping: module uses mapsEmbedUrl, shared uses mapEmbedUrl
+    mapsEmbedUrl:      asString(raw.mapsEmbedUrl)     || siteInfo.mapEmbedUrl,
+    copyrightText:     asString(raw.copyrightText)    || siteInfo.copyrightText,
+    // no shared fallback for these fields (per spec)
     projectLocation:   asString(raw.projectLocation),
     investorCompany:   asString(raw.investorCompany),
     coInvestorCompany: asString(raw.coInvestorCompany),
@@ -65,8 +75,6 @@ export function normalizePropertyInfo(raw: Record<string, unknown>): PropertyInf
     agentName:         asString(raw.agentName),
     agentLicense:      asString(raw.agentLicense),
     permitNumber:      asString(raw.permitNumber),
-    mapsEmbedUrl:      asString(raw.mapsEmbedUrl),
-    copyrightText:     asString(raw.copyrightText),
   }
 
   const items = normalizeItems(raw.items)

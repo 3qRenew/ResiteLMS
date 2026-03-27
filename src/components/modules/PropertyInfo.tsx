@@ -4,9 +4,11 @@
 //   module.data → normalizePropertyInfo() → PropertyInfoData → render
 import type { ModuleProps } from './index'
 import { normalizePropertyInfo } from './PropertyInfo.normalize'
+import { useSiteSharedInfo } from '../renderer/SiteSharedInfoContext'
 
 export function PropertyInfo({ module }: ModuleProps) {
-  const d = normalizePropertyInfo(module.data as Record<string, unknown>)
+  const siteInfo = useSiteSharedInfo()
+  const d = normalizePropertyInfo(module.data as Record<string, unknown>, siteInfo)
   const gridColsClass = d.columns === 1 ? 'md:grid-cols-1' : 'md:grid-cols-2'
 
   return (
