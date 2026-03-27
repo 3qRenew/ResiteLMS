@@ -1,5 +1,7 @@
 // Normalize — ContactForm (module_type: contact_form)
 // Pure function; no React / UI imports → safe for static import in MODULE_REGISTRY.
+import type { SiteSharedInfo } from '../../types/siteSharedInfo'
+import { defaultSiteSharedInfo } from '../../data/siteSharedInfoDefaults'
 
 export type ContactFormFieldKind =
   | 'name'
@@ -32,12 +34,13 @@ export interface ContactFormLocationSchema {
 }
 
 export interface ContactFormData extends Record<string, unknown> {
-  heading:     string
-  buttonLabel: string
-  projectId:   string | null
-  fields:      ContactFormField[]
-  recaptcha:   ContactFormRecaptcha
-  location:    ContactFormLocationSchema
+  heading:       string
+  buttonLabel:   string
+  projectId:     string | null
+  formAnchorId:  string
+  fields:        ContactFormField[]
+  recaptcha:     ContactFormRecaptcha
+  location:      ContactFormLocationSchema
 }
 
 function asString(value: unknown, fallback = ''): string {
@@ -104,12 +107,16 @@ function normalizeFields(raw: unknown): ContactFormField[] {
   return fields.length > 0 ? fields : defaultFields()
 }
 
-export function normalizeContactForm(raw: Record<string, unknown>): ContactFormData {
+export function normalizeContactForm(
+  raw: Record<string, unknown>,
+  siteInfo: SiteSharedInfo = defaultSiteSharedInfo,
+): ContactFormData {
   return {
-    heading:     asString(raw.heading, '預約參觀'),
-    buttonLabel: asString(raw.buttonLabel, '送出預約'),
-    projectId:   typeof raw.projectId === 'string' ? raw.projectId : null,
-    fields:      normalizeFields(raw.fields),
+    heading:      asString(raw.heading, '預約參觀'),
+    buttonLabel:  asString(raw.buttonLabel, '送出預約'),
+    projectId:    typeof raw.projectId === 'string' ? raw.projectId : null,
+    formAnchorId: asString(raw.formAnchorId) || siteInfo.formAnchorId || 'contact',
+    fields:       normalizeFields(raw.fields),
     recaptcha: {
       enabled: asBoolean(raw.recaptchaEnabled, false),
       siteKey: asString(raw.recaptchaSiteKey),

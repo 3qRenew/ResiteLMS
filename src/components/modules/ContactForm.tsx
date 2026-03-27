@@ -9,6 +9,7 @@ import { CheckCircle, AlertCircle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { ModuleProps } from './index'
 import { normalizeContactForm } from './ContactForm.normalize'
+import { useSiteSharedInfo } from '../renderer/SiteSharedInfoContext'
 
 interface LeadPayload {
   name:       string
@@ -23,8 +24,10 @@ async function submitLead(payload: LeadPayload) {
 }
 
 export function ContactForm({ module }: ModuleProps) {
-  const { heading, buttonLabel, projectId } = normalizeContactForm(
+  const siteInfo = useSiteSharedInfo()
+  const { heading, buttonLabel, projectId, formAnchorId } = normalizeContactForm(
     module.data as Record<string, unknown>,
+    siteInfo,
   )
 
   const [name,  setName]  = useState('')
@@ -48,7 +51,7 @@ export function ContactForm({ module }: ModuleProps) {
   // ── 成功畫面 ─────────────────────────────────────────────────
   if (mutation.isSuccess) {
     return (
-      <section id="contact" className="bg-gray-50 py-24 px-6">
+      <section id={formAnchorId} className="bg-gray-50 py-24 px-6">
         <div className="max-w-xl mx-auto text-center">
           <CheckCircle className="mx-auto mb-4 text-green-500" size={56} />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">預約成功！</h2>
@@ -66,7 +69,7 @@ export function ContactForm({ module }: ModuleProps) {
 
   // ── 表單畫面 ─────────────────────────────────────────────────
   return (
-    <section id="contact" className="bg-gray-50 py-24 px-6">
+    <section id={formAnchorId} className="bg-gray-50 py-24 px-6">
       <div className="max-w-xl mx-auto">
         <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">{heading}</h2>
 
