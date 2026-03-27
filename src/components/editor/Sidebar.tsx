@@ -469,6 +469,15 @@ function ContactFormFieldsEditor({
 }) {
   const updateModuleData = useEditorStore((s) => s.updateModuleData)
   const rawFields = Array.isArray(module.data.fields) ? module.data.fields : []
+  const formActionId = typeof module.data.formActionId === 'string'
+    ? module.data.formActionId
+    : ''
+  const recaptchaEnabled = typeof module.data.recaptchaEnabled === 'boolean'
+    ? module.data.recaptchaEnabled
+    : false
+  const recaptchaSiteKey = typeof module.data.recaptchaSiteKey === 'string'
+    ? module.data.recaptchaSiteKey
+    : ''
   const privacyText = typeof module.data.privacyText === 'string'
     ? module.data.privacyText
     : '我已閱讀並同意隱私政策'
@@ -524,6 +533,52 @@ function ContactFormFieldsEditor({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          表單代碼
+        </label>
+        <input
+          type="text"
+          value={formActionId}
+          onChange={(e) => updateModuleData(sectionId, module.id, { formActionId: e.target.value })}
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          啟用 reCAPTCHA
+        </label>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={recaptchaEnabled}
+          onClick={() => updateModuleData(sectionId, module.id, { recaptchaEnabled: !recaptchaEnabled })}
+          className={`relative flex h-5 w-10 items-center rounded-full transition-colors shrink-0
+            ${recaptchaEnabled ? 'bg-blue-500' : 'bg-gray-300'}`}
+        >
+          <span
+            className={`absolute h-4 w-4 rounded-full bg-white shadow-sm transition-transform
+              ${recaptchaEnabled ? 'translate-x-5' : 'translate-x-0.5'}`}
+          />
+          <span className="sr-only">{recaptchaEnabled ? '已啟用' : '未啟用'}</span>
+        </button>
+      </div>
+
+      {recaptchaEnabled && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+            reCAPTCHA Site Key
+          </label>
+          <input
+            type="text"
+            value={recaptchaSiteKey}
+            onChange={(e) => updateModuleData(sectionId, module.id, { recaptchaSiteKey: e.target.value })}
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          />
+        </div>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
           隱私政策文字
