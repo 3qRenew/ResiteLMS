@@ -30,6 +30,13 @@ Thumbs.db
 .claude
 .claude/
 
-CLAUDE.mdsrc/temp_assets/
 CLAUDE.md
 src/temp_assets/
+
+AGENTS.md
+src/agents/
+
+skills.md
+src/skills/
+skills/src/skills/
+skills.md
