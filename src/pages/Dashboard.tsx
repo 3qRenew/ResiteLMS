@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Plus, Loader2, LayoutDashboard, Trash2, AlertCircle, ImageOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { defaultSections } from '../data/defaultSections'
+import { defaultSiteSharedInfo } from '../data/siteSharedInfoDefaults'
 
 interface ProjectRow {
   id: string
@@ -32,7 +33,7 @@ async function createProject(): Promise<string> {
     .insert({
       name: '新建案專案',
       slug,
-      project_data: { sections: defaultSections },
+      project_data: { sections: defaultSections, siteInfo: defaultSiteSharedInfo },
     })
     .select('id')
     .single()

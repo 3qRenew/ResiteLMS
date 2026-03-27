@@ -169,12 +169,12 @@ export const SPECIAL_MODULE_DEFAULTS: Record<string, ModuleDefault> = {
     order: 1,
     data: {
       logoImage: '',
-      logoAlt: '建案名稱',
-      phoneNumber: '02-0000-0000',
-      phonePath: 'tel:02-0000-0000',
+      // logoAlt omitted → undefined → normalizeReNavbar ?? falls back to siteInfo.projectName
+      // phoneNumber omitted → undefined → normalizeReNavbar ?? falls back to siteInfo.phone
+      phonePath: '',
       facebookUrl: 'https://www.facebook.com/',
-      mapsUrl: 'https://maps.google.com/',
-      bookingLink: '#contact',
+      mapsUrl: '',         // '' → || falls back to siteInfo.mapLink
+      bookingLink: '',     // '' → || falls back to #${siteInfo.formAnchorId}
     },
   },
 
@@ -232,8 +232,8 @@ export const SPECIAL_MODULE_DEFAULTS: Record<string, ModuleDefault> = {
     module_type: 'property_info',
     order: 1,
     data: {
-      phone: '02-0000-0000',
-      receptionAddress: '請填入接待中心地址',
+      phone: '',                 // '' → || falls back to siteInfo.phone
+      receptionAddress: '',      // '' → || falls back to siteInfo.receptionAddress
       projectLocation: '請填入基地位置',
       investorCompany: '請填入投資公司',
       coInvestorCompany: '',
@@ -242,7 +242,7 @@ export const SPECIAL_MODULE_DEFAULTS: Record<string, ModuleDefault> = {
       agentLicense: '',
       permitNumber: '請填入建照號碼',
       mapsEmbedUrl: '',
-      copyrightText: 'Copyright © 建案名稱 Inc.',
+      copyrightText: '',         // '' → || falls back to siteInfo.copyrightText
     },
   },
 
@@ -263,8 +263,8 @@ export const SPECIAL_MODULE_DEFAULTS: Record<string, ModuleDefault> = {
     module_type: 'footer_bar',
     order: 1,
     data: {
-      brandName: '品牌名稱',
-      brandUrl: '#',
+      brandName: '',     // '' → || falls back to siteInfo.brandName
+      brandUrl: '',      // '' → || falls back to siteInfo.brandUrl
       copyrightText: '',
       socialLinks: [],
     },

@@ -1,6 +1,8 @@
 import type { Section } from '../types'
 import { SPECIAL_MODULE_DEFAULTS } from './moduleDefaults'
 
+const { phonePath: _phonePath, ...defaultReNavbarData } = SPECIAL_MODULE_DEFAULTS.re_navbar.data
+
 /** 新建專案時使用的預設 sections */
 export const defaultSections: Section[] = [
   {
@@ -13,7 +15,7 @@ export const defaultSections: Section[] = [
         section_id: 'section-navbar',
         module_type: 're_navbar',
         order: 1,
-        data: { ...SPECIAL_MODULE_DEFAULTS.re_navbar.data },
+        data: { ...defaultReNavbarData },
       },
     ],
   },

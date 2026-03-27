@@ -29,6 +29,13 @@ function uid() {
   return crypto.randomUUID().slice(0, 8)
 }
 
+function getInitialModuleData(moduleType: string, data: Record<string, unknown>): Record<string, unknown> {
+  if (moduleType !== 're_navbar') return { ...data }
+
+  const { phonePath: _phonePath, ...rest } = data
+  return rest
+}
+
 export const useEditorStore = create<EditorState>()((set) => ({
   activeSectionId: null,
   isDragging: false,
@@ -95,7 +102,12 @@ export const useEditorStore = create<EditorState>()((set) => ({
         id: sectionId,
         page_id: state.pageData.id,
         order: maxOrder + 1,
-        modules: [{ ...defaults, id: moduleId, section_id: sectionId }],
+        modules: [{
+          ...defaults,
+          id: moduleId,
+          section_id: sectionId,
+          data: getInitialModuleData(moduleType, defaults.data),
+        }],
       }
 
       return {

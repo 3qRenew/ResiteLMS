@@ -29,6 +29,11 @@ export interface ReNavbarData {
   actions:   NavAction[]
 }
 
+function derivePhonePath(phonePath: string | undefined, phoneNumber: string): string {
+  if (phonePath) return phonePath
+  return phoneNumber ? `tel:${phoneNumber}` : '#'
+}
+
 // ── Normalize ─────────────────────────────────────────────────────────────────
 
 export function normalizeReNavbar(
@@ -52,7 +57,7 @@ export function normalizeReNavbar(
   const actions: NavAction[] = [
     {
       kind:     'phone',
-      href:     d.phonePath || (resolvedPhone ? `tel:${resolvedPhone}` : 'tel:'),
+      href:     derivePhonePath(d.phonePath, resolvedPhone),
       label:    '貴賓專線',
       sublabel: resolvedPhone,
       external: false,
