@@ -6,9 +6,22 @@
 //   method = post
 //   hidden: go_email = service
 //   field name attributes must match PhpFieldKey whitelist
+import { useEffect, useRef } from 'react'
 import type { ModuleProps } from './index'
 import { normalizeContactForm } from './ContactForm.normalize'
 import { useSiteSharedInfo } from '../renderer/SiteSharedInfoContext'
+
+interface GrecaptchaInstance {
+  render: (container: HTMLElement, parameters: { sitekey: string }) => number
+  ready: (callback: () => void) => void
+  reset: (widgetId?: number) => void
+}
+
+declare global {
+  interface Window {
+    grecaptcha?: GrecaptchaInstance
+  }
+}
 
 const BASE_FIELD_CLASS =
   'w-full rounded-lg border border-gray-300 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100'
@@ -22,6 +35,48 @@ export function ContactForm({ module }: ModuleProps) {
 
   const safeFormActionId = formActionId.trim()
   const safeRecaptchaSiteKey = recaptchaSiteKey.trim()
+
+  const recaptchaContainerRef = useRef<HTMLDivElement>(null)
+  const widgetIdRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!recaptchaEnabled || !safeRecaptchaSiteKey) return
+
+    let cancelled = false
+    let intervalId: ReturnType<typeof setInterval> | null = null
+
+    const tryRender = () => {
+      if (cancelled || widgetIdRef.current !== null) {
+        if (intervalId !== null) clearInterval(intervalId)
+        return
+      }
+      const container = recaptchaContainerRef.current
+      if (!container || container.hasChildNodes()) return
+
+      if (typeof window.grecaptcha?.ready !== 'function') return
+
+      if (intervalId !== null) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+
+      window.grecaptcha.ready(() => {
+        if (cancelled || widgetIdRef.current !== null) return
+        const el = recaptchaContainerRef.current
+        if (!el || el.hasChildNodes()) return
+        widgetIdRef.current = window.grecaptcha!.render(el, { sitekey: safeRecaptchaSiteKey })
+      })
+    }
+
+    tryRender()
+    intervalId = setInterval(tryRender, 200)
+
+    return () => {
+      cancelled = true
+      if (intervalId !== null) clearInterval(intervalId)
+      widgetIdRef.current = null
+    }
+  }, [recaptchaEnabled, safeRecaptchaSiteKey])
   const phpAction = safeFormActionId
     ? `https://form.utmost.com.tw/admins/contactemailgo.php?id=${safeFormActionId}`
     : '#'
@@ -111,12 +166,10 @@ export function ContactForm({ module }: ModuleProps) {
           </label>
 
           {recaptchaEnabled && safeRecaptchaSiteKey && (
-            <>
-              {/* TODO: reCAPTCHA script must be loaded at the page level:
-                  https://www.google.com/recaptcha/api.js
-                  Do not inject the script from inside this module. */}
-              <div className="g-recaptcha" data-sitekey={safeRecaptchaSiteKey} />
-            </>
+            /* reCAPTCHA script is loaded at the page level (index.html).
+               Widget is rendered explicitly via grecaptcha.render() in useEffect
+               to avoid auto-render timing mismatch with React dynamic mount. */
+            <div ref={recaptchaContainerRef} />
           )}
 
           {recaptchaEnabled && !safeRecaptchaSiteKey && (
