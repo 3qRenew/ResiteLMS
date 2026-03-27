@@ -16,11 +16,12 @@ const BASE_FIELD_CLASS =
 export function ContactForm({ module }: ModuleProps) {
   const siteInfo = useSiteSharedInfo()
   const {
-    heading, buttonLabel, formAnchorId, fields,
+    heading, buttonLabel, formAnchorId, fields, privacyText,
     formActionId, recaptchaEnabled, recaptchaSiteKey,
   } = normalizeContactForm(module.data as Record<string, unknown>, siteInfo)
 
   const safeFormActionId = formActionId.trim()
+  const safeRecaptchaSiteKey = recaptchaSiteKey.trim()
   const phpAction = safeFormActionId
     ? `https://form.utmost.com.tw/admins/contactemailgo.php?id=${safeFormActionId}`
     : '#'
@@ -35,6 +36,12 @@ export function ContactForm({ module }: ModuleProps) {
         <form action={phpAction} method="post" className="flex flex-col gap-5">
           {/* PHP 固定 hidden 欄位 */}
           <input type="hidden" name="go_email" value="service" />
+
+          {!safeFormActionId && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              尚未設定表單代碼
+            </p>
+          )}
 
           {fields.map((field, index) => (
             <div key={`${field.name}-${index}`} className="flex flex-col gap-1.5">
@@ -93,19 +100,35 @@ export function ContactForm({ module }: ModuleProps) {
             </div>
           ))}
 
-          {recaptchaEnabled && recaptchaSiteKey && (
+          <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              name="privacy"
+              required
+              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span>{privacyText}</span>
+          </label>
+
+          {recaptchaEnabled && safeRecaptchaSiteKey && (
             <>
               {/* TODO: reCAPTCHA script must be loaded at the page level:
                   https://www.google.com/recaptcha/api.js
                   Do not inject the script from inside this module. */}
-              <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+              <div className="g-recaptcha" data-sitekey={safeRecaptchaSiteKey} />
             </>
+          )}
+
+          {recaptchaEnabled && !safeRecaptchaSiteKey && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              尚未設定 reCAPTCHA key
+            </p>
           )}
 
           <button
             type="submit"
             disabled={!safeFormActionId}
-            className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-lg hover:bg-blue-700 active:scale-[0.98] transition-all mt-2"
+            className="mt-2 w-full rounded-lg bg-blue-600 py-3.5 font-semibold text-white transition-all hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500"
           >
             {buttonLabel}
           </button>

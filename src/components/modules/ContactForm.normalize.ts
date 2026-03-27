@@ -71,6 +71,7 @@ export interface ContactFormData extends Record<string, unknown> {
   formAnchorId:     string
   heading:          string
   buttonLabel:      string
+  privacyText:      string
   fields:           ContactFormField[]
 }
 
@@ -218,6 +219,7 @@ export function normalizeContactForm(
     formAnchorId:     asString(raw.formAnchorId) || siteInfo.formAnchorId || 'contact',
     heading:          asString(raw.heading, '預約參觀'),
     buttonLabel:      asString(raw.buttonLabel, '送出預約'),
+    privacyText:      asString(raw.privacyText, '我已閱讀並同意隱私政策'),
     fields:           normalizeFields(raw.fields),
   }
 }

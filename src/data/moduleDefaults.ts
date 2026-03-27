@@ -54,8 +54,10 @@ export const MODULE_DEFAULTS: Record<string, ModuleDefault> = {
     module_type: 'contact_form',
     order: 1,
     data: {
+      formAnchorId: 'contact',
       heading: '預約參觀',
       buttonLabel: '送出預約',
+      privacyText: '我已閱讀並同意隱私政策',
       formActionId: '',
       recaptchaEnabled: false,
       recaptchaSiteKey: '',

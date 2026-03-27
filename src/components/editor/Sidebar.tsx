@@ -49,6 +49,8 @@ const FIELD_LABELS: Record<string, string> = {
   // CTA / 連結
   ctaLabel: '按鈕文字',
   ctaHref: '按鈕連結',
+  formActionId: '表單代碼',
+  formAnchorId: '表單錨點 ID',
   bookingLink: '預約連結',
   facebookUrl: 'Facebook 連結',
   mapsUrl: '地圖連結',
@@ -93,6 +95,9 @@ const FIELD_LABELS: Record<string, string> = {
   feature3Title: '特色 3 標題',
   feature3Description: '特色 3 說明',
   buttonLabel: '按鈕文字',
+  privacyText: '隱私政策文字',
+  recaptchaEnabled: '啟用 reCAPTCHA',
+  recaptchaSiteKey: 'reCAPTCHA Site Key',
 }
 
 function toLabel(key: string): string {
@@ -145,6 +150,7 @@ async function saveProject(
 
 type AnyRecord = Record<string, unknown>
 type ContactFormFieldDraft = ContactFormField & { key?: string }  // key is UI-only, not persisted
+type ContactFormVariant = 'simple' | 'standard' | 'full'
 
 function isImageKey(key: string) {
   const k = key.toLowerCase()
@@ -376,6 +382,84 @@ const DEPRECATED_FIELDS: Record<string, string[]> = {
   footer_bar:      ['brandName', 'copyrightText', 'socialLinks'],
 }
 
+function createContactFormField(
+  name: PhpFieldKey,
+  overrides: Partial<ContactFormFieldDraft> = {},
+): ContactFormFieldDraft {
+  const base: ContactFormFieldDraft = {
+    name,
+    widget: 'text',
+    label: PHP_FIELD_KEY_LABELS[name],
+    required: false,
+    placeholder: '',
+    options: [],
+  }
+
+  switch (name) {
+    case 'contact_name':
+      base.widget = 'text'
+      base.required = true
+      base.placeholder = '請輸入您的姓名'
+      break
+    case 'contact_phone':
+      base.widget = 'tel'
+      base.required = true
+      base.placeholder = '請輸入您的聯絡電話'
+      break
+    case 'contact_email':
+      base.widget = 'email'
+      base.placeholder = '請輸入您的 Email'
+      break
+    case 'contact_sex':
+      base.widget = 'radio'
+      base.options = ['先生', '小姐']
+      break
+    case 'contact_area':
+      base.widget = 'select'
+      base.placeholder = '請選擇居住城市'
+      base.options = ['台北市', '新北市', '桃園市', '台中市', '台南市', '高雄市']
+      break
+    case 'contact_address':
+      base.widget = 'text'
+      base.placeholder = '請輸入鄉鎮市區'
+      break
+    case 'contact_note':
+      base.widget = 'textarea'
+      base.placeholder = '請輸入您的需求'
+      break
+  }
+
+  return { ...base, ...overrides }
+}
+
+function getVariantFields(variant: ContactFormVariant): ContactFormFieldDraft[] {
+  switch (variant) {
+    case 'simple':
+      return [
+        createContactFormField('contact_name'),
+        createContactFormField('contact_phone'),
+      ]
+    case 'standard':
+      return [
+        createContactFormField('contact_name'),
+        createContactFormField('contact_sex'),
+        createContactFormField('contact_phone'),
+        createContactFormField('contact_email'),
+        createContactFormField('contact_note'),
+      ]
+    case 'full':
+      return [
+        createContactFormField('contact_name'),
+        createContactFormField('contact_sex'),
+        createContactFormField('contact_phone'),
+        createContactFormField('contact_email'),
+        createContactFormField('contact_area'),
+        createContactFormField('contact_address'),
+        createContactFormField('contact_note'),
+      ]
+  }
+}
+
 function ContactFormFieldsEditor({
   sectionId,
   module,
@@ -385,6 +469,9 @@ function ContactFormFieldsEditor({
 }) {
   const updateModuleData = useEditorStore((s) => s.updateModuleData)
   const rawFields = Array.isArray(module.data.fields) ? module.data.fields : []
+  const privacyText = typeof module.data.privacyText === 'string'
+    ? module.data.privacyText
+    : '我已閱讀並同意隱私政策'
 
   const fields = rawFields.filter(
     (field): field is ContactFormFieldDraft =>
@@ -429,10 +516,49 @@ function ContactFormFieldsEditor({
     })
   }
 
+  function applyVariant(variant: ContactFormVariant) {
+    updateFields(getVariantFields(variant))
+  }
+
   // PHP_WIDGET_OPTIONS and PHP_FIELD_KEYS are imported from normalize
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium uppercase tracking-wide text-gray-500">
+          隱私政策文字
+        </label>
+        <input
+          type="text"
+          value={privacyText}
+          onChange={(e) => updateModuleData(sectionId, module.id, { privacyText: e.target.value })}
+          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">快速套用</h3>
+          <p className="mt-1 text-xs text-gray-400">直接覆蓋目前欄位組合</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            { value: 'simple', label: 'Simple' },
+            { value: 'standard', label: 'Standard' },
+            { value: 'full', label: 'Full' },
+          ] as const).map((variant) => (
+            <button
+              key={variant.value}
+              type="button"
+              onClick={() => applyVariant(variant.value)}
+              className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+            >
+              {variant.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold text-gray-800">表單欄位</h3>
