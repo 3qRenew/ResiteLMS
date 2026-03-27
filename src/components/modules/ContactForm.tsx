@@ -20,9 +20,12 @@ export function ContactForm({ module }: ModuleProps) {
     formActionId, recaptchaEnabled, recaptchaSiteKey,
   } = normalizeContactForm(module.data as Record<string, unknown>, siteInfo)
 
-  const phpAction = formActionId
-    ? `https://form.utmost.com.tw/admins/contactemailgo.php?id=${formActionId}`
-    : ''
+  const safeFormActionId = formActionId.trim()
+  const phpAction = safeFormActionId
+    ? `https://form.utmost.com.tw/admins/contactemailgo.php?id=${safeFormActionId}`
+    : '#'
+
+  if (fields.length === 0) return null
 
   return (
     <section id={formAnchorId} className="bg-gray-50 py-24 px-6">
@@ -91,11 +94,17 @@ export function ContactForm({ module }: ModuleProps) {
           ))}
 
           {recaptchaEnabled && recaptchaSiteKey && (
-            <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+            <>
+              {/* TODO: reCAPTCHA script must be loaded at the page level:
+                  https://www.google.com/recaptcha/api.js
+                  Do not inject the script from inside this module. */}
+              <div className="g-recaptcha" data-sitekey={recaptchaSiteKey} />
+            </>
           )}
 
           <button
             type="submit"
+            disabled={!safeFormActionId}
             className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-lg hover:bg-blue-700 active:scale-[0.98] transition-all mt-2"
           >
             {buttonLabel}

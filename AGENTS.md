@@ -282,3 +282,59 @@ Codex builds safely inside it.
 Claude validates before commit.
 
 Never mix responsibilities.
+
+
+## 🔌 External Contract Modules
+
+部分模組屬於「外部契約型模組」，不走平台內部資料流，而是直接對接既有外部系統。
+
+目前包含：
+- `contact_form`（PHP 表單接收器）
+
+### 設計原則
+
+- **不得使用平台 submit 流程**
+  - 禁止 `submitLead`、Supabase、fetch API 等
+- 必須使用原生 HTML form：
+  - `action` 指向外部系統
+  - `method="post"`
+- 欄位 `name` 必須符合外部契約白名單
+- normalize 必須負責：
+  - 欄位白名單驗證
+  - legacy 欄位映射（kind/type → name/widget）
+  - 去重（同 name 只保留第一個）
+- Renderer 必須保持 pure：
+  - 不包含副作用
+  - 不包含資料提交邏輯
+- 模組內不可注入外部 script（如 reCAPTCHA）
+  - script 必須由頁面層負責
+
+### reCAPTCHA 規則（暫行）
+
+- `recaptchaEnabled` 可由 Editor 控制
+- `recaptchaSiteKey` 可暫存在 module data（測試用）
+- 正式 key 管理延後至「專案後台儀表板」
+- module 僅負責 render `g-recaptcha` DOM
+
+### 未來擴展
+
+未來可能新增：
+- `lead_form`（平台內建表單，走 Supabase）
+- 兩者不得混用
+
+
+## 🧩 Module Types (Conceptual)
+
+Modules are categorized into:
+
+1. Internal Modules
+   - Fully controlled by platform
+   - Use SiteSharedInfo + module data
+   - Example: property_info, re_navbar
+
+2. External Contract Modules
+   - Follow external system contract
+   - Do NOT use platform submit flow
+   - Example: contact_form
+
+These two types must not mix responsibilities.
