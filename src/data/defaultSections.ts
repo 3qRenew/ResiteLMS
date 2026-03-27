@@ -1,4 +1,5 @@
 import type { Section } from '../types'
+import { SPECIAL_MODULE_DEFAULTS } from './moduleDefaults'
 
 /** 新建專案時使用的預設 sections */
 export const defaultSections: Section[] = [
@@ -10,16 +11,9 @@ export const defaultSections: Section[] = [
       {
         id: 'module-navbar',
         section_id: 'section-navbar',
-        module_type: 'navbar',
+        module_type: 're_navbar',
         order: 1,
-        data: {
-          logo: '新專案',
-          links: [
-            { label: '建案特色', href: '#features' },
-            { label: '地理位置', href: '#location' },
-            { label: '立即預約', href: '#contact' },
-          ],
-        },
+        data: { ...SPECIAL_MODULE_DEFAULTS.re_navbar.data },
       },
     ],
   },
@@ -45,9 +39,23 @@ export const defaultSections: Section[] = [
     ],
   },
   {
-    id: 'section-contact',
+    id: 'section-aerial-view',
     page_id: '',
     order: 3,
+    modules: [
+      {
+        id: 'module-aerial-view',
+        section_id: 'section-aerial-view',
+        module_type: 'aerial_view',
+        order: 1,
+        data: { ...SPECIAL_MODULE_DEFAULTS.aerial_view.data },
+      },
+    ],
+  },
+  {
+    id: 'section-contact',
+    page_id: '',
+    order: 4,
     modules: [
       {
         id: 'module-contact',

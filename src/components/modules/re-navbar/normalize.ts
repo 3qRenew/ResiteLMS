@@ -1,3 +1,6 @@
+import type { SiteSharedInfo } from '../../../types/siteSharedInfo'
+import { defaultSiteSharedInfo } from '../../../data/siteSharedInfoDefaults'
+
 // ── Data models ───────────────────────────────────────────────────────────────
 
 export interface ReNavbarRawData {
@@ -28,25 +31,30 @@ export interface ReNavbarData {
 
 // ── Normalize ─────────────────────────────────────────────────────────────────
 
-export function normalizeReNavbar(raw: Record<string, unknown>): ReNavbarData {
+export function normalizeReNavbar(
+  raw: Record<string, unknown>,
+  siteInfo: SiteSharedInfo = defaultSiteSharedInfo,
+): ReNavbarData {
   const d = raw as ReNavbarRawData
 
-  // If Codex-normalized actions[] already exist, use them directly
+  // logoImage / logoAlt: raw > siteInfo > hardcoded default (both branches)
+  const logoImage = d.logoImage ?? siteInfo.projectLogoUrl ?? ''
+  const logoAlt   = d.logoAlt   ?? siteInfo.projectName    ?? '建案名稱'
+
+  // If Codex-normalized actions[] already exist, use them directly (actions整包優先)
   if (Array.isArray(d.actions) && d.actions.length > 0) {
-    return {
-      logoImage: d.logoImage ?? '',
-      logoAlt:   d.logoAlt ?? '建案名稱',
-      actions:   d.actions,
-    }
+    return { logoImage, logoAlt, actions: d.actions }
   }
 
-  // Derive actions from raw flat fields
+  // Flat fields path — derive actions with shared fallbacks
+  const resolvedPhone = d.phoneNumber ?? siteInfo.phone ?? ''
+
   const actions: NavAction[] = [
     {
       kind:     'phone',
-      href:     d.phonePath || (d.phoneNumber ? `tel:${d.phoneNumber}` : 'tel:'),
+      href:     d.phonePath || (resolvedPhone ? `tel:${resolvedPhone}` : 'tel:'),
       label:    '貴賓專線',
-      sublabel: d.phoneNumber ?? '',
+      sublabel: resolvedPhone,
       external: false,
     },
     {
@@ -58,23 +66,19 @@ export function normalizeReNavbar(raw: Record<string, unknown>): ReNavbarData {
     },
     {
       kind:     'map',
-      href:     d.mapsUrl || '#',
+      href:     d.mapsUrl || siteInfo.mapLink || '#',
       label:    '地圖導航',
       sublabel: 'GoogleMap',
       external: true,
     },
     {
       kind:     'booking',
-      href:     d.bookingLink || '#contact',
+      href:     d.bookingLink || (siteInfo.formAnchorId ? `#${siteInfo.formAnchorId}` : '#contact'),
       label:    '立即預約',
       sublabel: 'Booking',
       external: false,
     },
   ]
 
-  return {
-    logoImage: d.logoImage ?? '',
-    logoAlt:   d.logoAlt ?? '建案名稱',
-    actions,
-  }
+  return { logoImage, logoAlt, actions }
 }

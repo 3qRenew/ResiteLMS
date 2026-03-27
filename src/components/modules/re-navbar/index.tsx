@@ -9,6 +9,7 @@ import type { ModuleProps } from '../index'
 import { normalizeReNavbar } from './normalize'
 import { ReNavbarView } from './ReNavbarView'
 import { useEditing } from '../../renderer/EditingContext'
+import { useSiteSharedInfo } from '../../renderer/SiteSharedInfoContext'
 
 // ── Sticky hook ───────────────────────────────────────────────────────────────
 
@@ -43,7 +44,8 @@ function useNavbarSticky(offset: number): boolean {
 // ── Module component ──────────────────────────────────────────────────────────
 
 export function ReNavbar({ module }: ModuleProps) {
-  const data      = normalizeReNavbar(module.data)
+  const siteInfo  = useSiteSharedInfo()
+  const data      = normalizeReNavbar(module.data, siteInfo)
   const isSticky  = useNavbarSticky(STICKY_OFFSET_PX)
   const isEditing = useEditing()
 
