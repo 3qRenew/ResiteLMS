@@ -13,3 +13,4 @@ export const defaultSiteSharedInfo: SiteSharedInfo = {
   copyrightText: 'Copyright © 建案名稱 Inc.',
   socialLinks: [],
 }
+
